@@ -7,10 +7,20 @@ This workflow is for unattended, multi-PR feature work. It assumes an orchestrat
 - No human is consulted mid-loop. If the agent cannot converge, it records the failure and stops.
 - The reviewer is fresh every time. It sees only the files written to disk and the prompt.
 - The state file is the source of truth. Update it after every phase boundary and reviewer call.
+- Companion skills or modules are wrapped by this loop. Do not modify them; make them autonomous by converting their questions into decision records, conservative recommendations, or blockers.
 - Internet verification is mandatory for plan review, decomposition review when external claims are involved, and per-subissue plan review.
 - Every PR has a test contract before implementation begins.
 - Iteration caps prevent infinite loops.
 - Merge each PR as soon as it is clean.
+
+## Companion Skill Adapters
+
+The workflow can compose with pre-existing skills, modules, or documented sub-workflows:
+
+- **`grill-my-plan` adapter**: run before plan-review checkpoints. Use its local-code inspection, external evidence, scenario pressure testing, and trade-off calibration to produce a written grill report. In unattended mode, any question it would normally ask a human becomes a conservative autonomous decision or a blocker.
+- **`review-checkpoint` adapter**: run inside every implementation PR. It owns the locked test contract, incremental checkpoints, cumulative self-review, and final contract walk-through.
+
+These adapters are optional but recommended. The long-running loop controls autonomy, state, reviewer calls, iteration caps, PR ordering, and E2E validation.
 
 ## State File
 
@@ -52,6 +62,13 @@ EOF
 )"
 ```
 
+Resolve the reviewer in this order:
+
+1. If `$AGENT_REVIEWER_CMD` is set, use it exactly.
+2. Else, if `claude` exists on `PATH`, use `claude --dangerously-skip-permissions -p`.
+3. Else, if the host exposes a fresh-agent or subagent mechanism, spawn a review-only agent with the prompt body and file paths.
+4. Else, abort the current phase with `abort_reason = "No reviewer adapter available"`.
+
 ## Phase 1: Review The Plan
 
 Iteration cap: 3.
@@ -59,10 +76,11 @@ Iteration cap: 3.
 1. Create a scratch branch named `agent/plan-{timestamp}`.
 2. Save the user-provided plan verbatim to `plans/raw-plan.md`.
 3. Initialize `/tmp/agent-loop-state.json`.
-4. Run the plan review prompt in [prompts/phase-1-plan-review.md](prompts/phase-1-plan-review.md).
-5. Copy `plans/raw-plan.md` to `plans/reviewed-plan.md` and apply blocker and major findings.
-6. Re-review `plans/reviewed-plan.md` until there are no blockers and fewer than three majors.
-7. Commit the reviewed plan:
+4. Run a non-interactive `grill-my-plan` pass and write `plans/grill-review-{N}.md`.
+5. Run the plan review prompt in [prompts/phase-1-plan-review.md](prompts/phase-1-plan-review.md).
+6. Copy `plans/raw-plan.md` to `plans/reviewed-plan.md` and apply blocker and major findings.
+7. Re-review `plans/reviewed-plan.md` until there are no blockers and fewer than three majors.
+8. Commit the reviewed plan:
 
 ```bash
 git add plans/
@@ -111,12 +129,13 @@ git pull
 git checkout -b {branch_name}
 ```
 
-2. Write a test contract at `testing/{branchname}.md` using [templates/test-contract.md](templates/test-contract.md).
-3. Run the per-subissue plan review prompt in [prompts/phase-3-subissue-plan-review.md](prompts/phase-3-subissue-plan-review.md).
-4. Fix blockers before coding.
-5. Implement only the reviewed subissue scope.
-6. Run unit, integration, smoke, manual, and E2E checks from the test contract.
-7. Create a PR.
+2. Write a test contract at `testing/{branchname}.md` using [templates/test-contract.md](templates/test-contract.md) and the `review-checkpoint` contract requirements.
+3. Run a non-interactive `grill-my-plan` pass and write `testing/{branchname}-grill.md`.
+4. Run the per-subissue plan review prompt in [prompts/phase-3-subissue-plan-review.md](prompts/phase-3-subissue-plan-review.md).
+5. Fix blockers before coding.
+6. Implement only the reviewed subissue scope using the `review-checkpoint` adapter.
+7. Run unit, integration, smoke, manual, and E2E checks from the test contract.
+8. Create a PR.
 
 ```bash
 gh pr create \
@@ -124,14 +143,14 @@ gh pr create \
   --body-file /tmp/pr-body.md
 ```
 
-8. Save the diff and run the PR review prompt in [prompts/phase-3-pr-review.md](prompts/phase-3-pr-review.md).
+9. Save the diff and run the PR review prompt in [prompts/phase-3-pr-review.md](prompts/phase-3-pr-review.md).
 
 ```bash
 gh pr diff {pr_number} > /tmp/pr-{pr_number}.diff
 ```
 
-9. Capture local verification output in `testing/{branchname}-local-test-log.md`.
-10. Merge when the PR review has no blockers and local verification passes.
+10. Capture local verification output in `testing/{branchname}-local-test-log.md`.
+11. Merge when the PR review has no blockers and local verification passes.
 
 ```bash
 gh pr merge {pr_number} --squash --delete-branch
@@ -194,7 +213,7 @@ Abort cleanly when:
 - A per-subissue plan review hits its cap with unresolved blockers.
 - A PR review hits its cap with unresolved blockers.
 - E2E follow-up PRs exceed five.
-- `gh`, `git`, the reviewer agent, or local test commands repeatedly fail with a non-recoverable error.
+- `gh`, `git`, the reviewer adapter, companion skill adapter, or local test commands repeatedly fail with a non-recoverable error.
 
 On abort:
 

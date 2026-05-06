@@ -17,6 +17,7 @@ Coding agents are getting good enough to work for hours, but the failure mode is
 This workflow is for the messy middle between a single prompt and a full platform:
 
 - **Spec-first**: review the plan before code exists.
+- **Plan grilling**: pressure-test the plan before the reviewer sees it.
 - **Multi-PR by default**: split large work into dependency-ordered subissues.
 - **Fresh reviewer loops**: use an independent reviewer context at every checkpoint.
 - **Current-source verification**: check external APIs, library behavior, and service contracts before relying on them.
@@ -33,6 +34,19 @@ This repo is **not** a Ralph Loop package and does not require a Ralph runtime. 
 - More aggressive about fresh reviewer checkpoints
 - Focused on end-to-end validation after all PRs land
 - Easy to adapt to Claude Code, Codex, OpenHands, Aider, Goose, or your own agent harness
+
+## Optional Companion Skills
+
+If your coding environment has reusable skills, modules, or sub-workflows, this repo treats them as adapters around the main loop. The two intended companions are:
+
+- **`grill-my-plan`**: use it before plan-review checkpoints to pressure-test architecture, hidden subtasks, stale API assumptions, rollback gaps, and test coverage.
+- **`review-checkpoint`**: use it inside each PR to lock the test contract, implement in small reviewed steps, and prove the final diff matches the contract.
+
+The companion skills do not need to be changed. The long-running loop makes them autonomous by wrapping their outputs:
+
+- If `grill-my-plan` would normally ask a human a question, convert that question into a written decision record, conservative recommendation, or blocker.
+- If `review-checkpoint` needs more contract detail, update the subissue test contract and re-run the plan reviewer before coding.
+- If no safe autonomous decision exists, abort cleanly and leave the state file plus critique files inspectable.
 
 ## When To Use It
 
@@ -58,7 +72,7 @@ The default reviewer invocation in this repo uses Claude Code:
 claude --dangerously-skip-permissions -p "<prompt>"
 ```
 
-You can adapt the prompts for any reviewer agent that can read files, use the internet when needed, and write markdown critique files.
+If Claude Code is not installed, use `$AGENT_REVIEWER_CMD` or the host's own fresh-agent/subagent mechanism. The reviewer only needs to read files, use the internet when needed, and write markdown critique files. It must not write implementation code.
 
 ## Workflow
 
@@ -74,6 +88,7 @@ The full operating spec is in [WORKFLOW.md](WORKFLOW.md).
 
 - [WORKFLOW.md](WORKFLOW.md): complete long-running agent loop
 - [templates/state.json](templates/state.json): shared state file shape
+- [templates/grill-review.md](templates/grill-review.md): autonomous plan-grilling report format
 - [templates/subissue.md](templates/subissue.md): subissue format
 - [templates/test-contract.md](templates/test-contract.md): per-PR test contract format
 - [prompts/](prompts): reviewer prompt templates
@@ -82,6 +97,7 @@ The full operating spec is in [WORKFLOW.md](WORKFLOW.md).
 
 - Keep `/tmp/agent-loop-state.json` as the single source of truth.
 - Use a fresh reviewer context at every checkpoint.
+- Prefer `$AGENT_REVIEWER_CMD`, then Claude Code, then a fresh self-spawned reviewer if the host allows it.
 - Verify external APIs and service contracts with current sources before coding.
 - Merge clean PRs eagerly instead of batching them.
 - Abort cleanly when iteration caps are reached.
