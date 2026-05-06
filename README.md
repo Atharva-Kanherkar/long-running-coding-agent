@@ -37,10 +37,10 @@ This repo is **not** a Ralph Loop package and does not require a Ralph runtime. 
 
 ## Optional Companion Skills
 
-If your coding environment has reusable skills, modules, or sub-workflows, this repo treats them as adapters around the main loop. The two intended companions are:
+If your coding environment has reusable skills, modules, or sub-workflows, this repo treats them as adapters around the main loop. Skill-aware agents should load these by name; generic agents should read the linked repos as the canonical workflow specs.
 
-- **`grill-my-plan`**: use it before plan-review checkpoints to pressure-test architecture, hidden subtasks, stale API assumptions, rollback gaps, and test coverage.
-- **`review-checkpoint`**: use it inside each PR to lock the test contract, implement in small reviewed steps, and prove the final diff matches the contract.
+- **[`grill-my-plan`](https://github.com/Atharva-Kanherkar/grill-my-plan)**: use it before plan-review checkpoints to pressure-test architecture, hidden subtasks, stale API assumptions, rollback gaps, and test coverage.
+- **[`review-checkpoint`](https://github.com/Atharva-Kanherkar/review-checkpoint)**: use it inside each PR to lock the test contract, implement in small reviewed steps, and prove the final diff matches the contract.
 
 The companion skills do not need to be changed. The long-running loop makes them autonomous by wrapping their outputs:
 

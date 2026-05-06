@@ -17,10 +17,13 @@ This workflow is for unattended, multi-PR feature work. It assumes an orchestrat
 
 The workflow can compose with pre-existing skills, modules, or documented sub-workflows:
 
-- **`grill-my-plan` adapter**: run before plan-review checkpoints. Use its local-code inspection, external evidence, scenario pressure testing, and trade-off calibration to produce a written grill report. In unattended mode, any question it would normally ask a human is sent through the reviewer adapter for autonomous resolution. Questions are not blockers by default.
-- **`review-checkpoint` adapter**: run inside every implementation PR. It owns the locked test contract, incremental checkpoints, cumulative self-review, and final contract walk-through.
+- **[`grill-my-plan`](https://github.com/Atharva-Kanherkar/grill-my-plan) adapter**: run before plan-review checkpoints. Use its local-code inspection, external evidence, scenario pressure testing, and trade-off calibration to produce a written grill report. In unattended mode, any question it would normally ask a human is sent through the reviewer adapter for autonomous resolution. Questions are not blockers by default.
+- **[`review-checkpoint`](https://github.com/Atharva-Kanherkar/review-checkpoint) adapter**: run inside every implementation PR. It owns the locked test contract, incremental checkpoints, cumulative self-review, and final contract walk-through.
 
 These adapters are optional but recommended. The long-running loop controls autonomy, state, reviewer calls, iteration caps, PR ordering, and E2E validation.
+
+Skill-aware agents should load the installed skills by name. Generic agents should read
+the linked repositories as the companion workflow specs before running the long loop.
 
 ## State File
 
