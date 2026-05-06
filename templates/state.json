@@ -1,0 +1,33 @@
+{
+  "task_title": "Short description of the overall feature",
+  "deliverable_type": "api | cli | ui | mixed",
+  "started_at": "{ISO timestamp}",
+  "plan": {
+    "raw": "plans/raw-plan.md",
+    "reviewed": "plans/reviewed-plan.md",
+    "review_iterations": 0,
+    "review_status": "pending | passed | aborted"
+  },
+  "subissues": [
+    {
+      "id": "1",
+      "issue_number": 42,
+      "issue_url": null,
+      "title": "Subissue title",
+      "depends_on": [],
+      "status": "pending | in_progress | pr_open | merged | done | aborted",
+      "branch": "feat/example",
+      "pr_url": null,
+      "plan_file": "testing/feat-example.md",
+      "plan_review_iterations": 0,
+      "pr_review_iterations": 0
+    }
+  ],
+  "current_subissue": null,
+  "e2e": {
+    "status": "not_started | in_progress | passed | failed | aborted",
+    "test_log": "e2e/log.md",
+    "followup_prs": []
+  },
+  "abort_reason": null
+}
