@@ -44,9 +44,9 @@ If your coding environment has reusable skills, modules, or sub-workflows, this 
 
 The companion skills do not need to be changed. The long-running loop makes them autonomous by wrapping their outputs:
 
-- If `grill-my-plan` would normally ask a human a question, convert that question into a written decision record, conservative recommendation, or blocker.
+- If `grill-my-plan` would normally ask a human a question, route that question to the autonomous reviewer adapter. The resolver must answer it, narrow the scope, split out a generated follow-up/subissue, or choose the safest reversible default.
 - If `review-checkpoint` needs more contract detail, update the subissue test contract and re-run the plan reviewer before coding.
-- If no safe autonomous decision exists, abort cleanly and leave the state file plus critique files inspectable.
+- A grill question is not a blocker by default. Only abort when every available autonomous action would be unsafe, destructive, or unverifiable.
 
 ## When To Use It
 
@@ -89,6 +89,7 @@ The full operating spec is in [WORKFLOW.md](WORKFLOW.md).
 - [WORKFLOW.md](WORKFLOW.md): complete long-running agent loop
 - [templates/state.json](templates/state.json): shared state file shape
 - [templates/grill-review.md](templates/grill-review.md): autonomous plan-grilling report format
+- [templates/grill-question-resolution.md](templates/grill-question-resolution.md): autonomous resolver output format
 - [templates/subissue.md](templates/subissue.md): subissue format
 - [templates/test-contract.md](templates/test-contract.md): per-PR test contract format
 - [prompts/](prompts): reviewer prompt templates

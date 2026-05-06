@@ -7,7 +7,7 @@ This workflow is for unattended, multi-PR feature work. It assumes an orchestrat
 - No human is consulted mid-loop. If the agent cannot converge, it records the failure and stops.
 - The reviewer is fresh every time. It sees only the files written to disk and the prompt.
 - The state file is the source of truth. Update it after every phase boundary and reviewer call.
-- Companion skills or modules are wrapped by this loop. Do not modify them; make them autonomous by converting their questions into decision records, conservative recommendations, or blockers.
+- Companion skills or modules are wrapped by this loop. Do not modify them; make them autonomous by routing their questions to the reviewer adapter and forcing an answer, scope narrowing, generated follow-up/subissue, or safest reversible default.
 - Internet verification is mandatory for plan review, decomposition review when external claims are involved, and per-subissue plan review.
 - Every PR has a test contract before implementation begins.
 - Iteration caps prevent infinite loops.
@@ -17,7 +17,7 @@ This workflow is for unattended, multi-PR feature work. It assumes an orchestrat
 
 The workflow can compose with pre-existing skills, modules, or documented sub-workflows:
 
-- **`grill-my-plan` adapter**: run before plan-review checkpoints. Use its local-code inspection, external evidence, scenario pressure testing, and trade-off calibration to produce a written grill report. In unattended mode, any question it would normally ask a human becomes a conservative autonomous decision or a blocker.
+- **`grill-my-plan` adapter**: run before plan-review checkpoints. Use its local-code inspection, external evidence, scenario pressure testing, and trade-off calibration to produce a written grill report. In unattended mode, any question it would normally ask a human is sent through the reviewer adapter for autonomous resolution. Questions are not blockers by default.
 - **`review-checkpoint` adapter**: run inside every implementation PR. It owns the locked test contract, incremental checkpoints, cumulative self-review, and final contract walk-through.
 
 These adapters are optional but recommended. The long-running loop controls autonomy, state, reviewer calls, iteration caps, PR ordering, and E2E validation.
@@ -69,6 +69,20 @@ Resolve the reviewer in this order:
 3. Else, if the host exposes a fresh-agent or subagent mechanism, spawn a review-only agent with the prompt body and file paths.
 4. Else, abort the current phase with `abort_reason = "No reviewer adapter available"`.
 
+## Autonomous Grill Question Resolution
+
+When `grill-my-plan` or another companion workflow raises a question:
+
+1. Do not ask a human.
+2. Do not mark the question as a blocker just because it would normally need clarification.
+3. Send the question, relevant files, state file, and grill report through the reviewer adapter.
+4. Require the resolver to choose one action: answer, narrow scope, split into a generated subissue/follow-up, defer to E2E follow-up, or choose the safest reversible default.
+5. Write the resolution next to the grill report:
+   - Phase 1: `plans/grill-question-resolution-{N}.md`
+   - Phase 3: `testing/{branchname}-grill-resolution-{N}.md`
+
+Only abort when every available autonomous action is unsafe, destructive, or unverifiable.
+
 ## Phase 1: Review The Plan
 
 Iteration cap: 3.
@@ -77,10 +91,11 @@ Iteration cap: 3.
 2. Save the user-provided plan verbatim to `plans/raw-plan.md`.
 3. Initialize `/tmp/agent-loop-state.json`.
 4. Run a non-interactive `grill-my-plan` pass and write `plans/grill-review-{N}.md`.
-5. Run the plan review prompt in [prompts/phase-1-plan-review.md](prompts/phase-1-plan-review.md).
-6. Copy `plans/raw-plan.md` to `plans/reviewed-plan.md` and apply blocker and major findings.
-7. Re-review `plans/reviewed-plan.md` until there are no blockers and fewer than three majors.
-8. Commit the reviewed plan:
+5. Resolve all grill questions through the reviewer adapter and write `plans/grill-question-resolution-{N}.md`.
+6. Run the plan review prompt in [prompts/phase-1-plan-review.md](prompts/phase-1-plan-review.md).
+7. Copy `plans/raw-plan.md` to `plans/reviewed-plan.md` and apply blocker and major findings.
+8. Re-review `plans/reviewed-plan.md` until there are no blockers and fewer than three majors.
+9. Commit the reviewed plan:
 
 ```bash
 git add plans/
@@ -131,11 +146,12 @@ git checkout -b {branch_name}
 
 2. Write a test contract at `testing/{branchname}.md` using [templates/test-contract.md](templates/test-contract.md) and the `review-checkpoint` contract requirements.
 3. Run a non-interactive `grill-my-plan` pass and write `testing/{branchname}-grill.md`.
-4. Run the per-subissue plan review prompt in [prompts/phase-3-subissue-plan-review.md](prompts/phase-3-subissue-plan-review.md).
-5. Fix blockers before coding.
-6. Implement only the reviewed subissue scope using the `review-checkpoint` adapter.
-7. Run unit, integration, smoke, manual, and E2E checks from the test contract.
-8. Create a PR.
+4. Resolve all grill questions through the reviewer adapter and write `testing/{branchname}-grill-resolution-{N}.md`.
+5. Run the per-subissue plan review prompt in [prompts/phase-3-subissue-plan-review.md](prompts/phase-3-subissue-plan-review.md).
+6. Fix blockers before coding.
+7. Implement only the reviewed subissue scope using the `review-checkpoint` adapter.
+8. Run unit, integration, smoke, manual, and E2E checks from the test contract.
+9. Create a PR.
 
 ```bash
 gh pr create \
@@ -143,14 +159,14 @@ gh pr create \
   --body-file /tmp/pr-body.md
 ```
 
-9. Save the diff and run the PR review prompt in [prompts/phase-3-pr-review.md](prompts/phase-3-pr-review.md).
+10. Save the diff and run the PR review prompt in [prompts/phase-3-pr-review.md](prompts/phase-3-pr-review.md).
 
 ```bash
 gh pr diff {pr_number} > /tmp/pr-{pr_number}.diff
 ```
 
-10. Capture local verification output in `testing/{branchname}-local-test-log.md`.
-11. Merge when the PR review has no blockers and local verification passes.
+11. Capture local verification output in `testing/{branchname}-local-test-log.md`.
+12. Merge when the PR review has no blockers and local verification passes.
 
 ```bash
 gh pr merge {pr_number} --squash --delete-branch

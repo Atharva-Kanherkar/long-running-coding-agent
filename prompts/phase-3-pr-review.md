@@ -1,6 +1,6 @@
 # Phase 3: PR Review Prompt
 
-Review `/tmp/pr-{pr_number}.diff` against `testing/{branchname}.md`. Also read `testing/{branchname}-grill.md` if it exists, `plans/reviewed-plan.md`, `plans/subissues.md`, and `/tmp/agent-loop-state.json`.
+Review `/tmp/pr-{pr_number}.diff` against `testing/{branchname}.md`. Also read `testing/{branchname}-grill.md` if it exists, all `testing/{branchname}-grill-resolution-*.md` files if they exist, `plans/reviewed-plan.md`, `plans/subissues.md`, and `/tmp/agent-loop-state.json`.
 
 Check:
 

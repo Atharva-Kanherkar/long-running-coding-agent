@@ -19,7 +19,8 @@
 
 - **Severity: major** - Description - Recommended fix
 
-## Questions Converted To Decisions
+## Questions For Autonomous Resolution
 
 - Question the plan-grilling pass would normally ask:
-- Autonomous decision, conservative recommendation, or blocker:
+- Why it matters:
+- Files, evidence, or state needed by the resolver:
